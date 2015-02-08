@@ -26,28 +26,51 @@ object Solver extends App {
 
     for (big <- bigs)
       for (s <- smalls if isItClose(s, big, smalls diff List(s), target)) {
-        val others = smalls diff List(s)
         val mult = big * s
-        val n = others.reduce((a: Int, b: Int) => nearest(mult + a, mult + b, target)) - mult
-        solutions = new Solution(mult + n, big + "*" + s + "+" + n) :: solutions
+        var currentSolution = new Solution(mult, big+"*"+s)
+        possibles(smalls diff List(s)).foreach { (k:(Int, String)) => 
+          if (nearer(mult+k._1, currentSolution.value, target))
+            currentSolution = new Solution(mult+k._1, currentSolution.method+"+"+k._2)
+          if (nearer(mult-k._1, currentSolution.value, target))
+            currentSolution = new Solution(mult-k._1, currentSolution.method+"-"+k._2)
+        }
+//        val n = others.reduce((a: Int, b: Int) => nearest(mult + a, mult + b, target)) - mult
+        solutions = currentSolution :: solutions
       }
-    return solutions.sortWith((a: Solution, b: Solution) => math.abs(target - b.x) > math.abs(target - a.x)).headOption
+    println(solutions)
+    solutions.sortWith((a: Solution, b: Solution) => math.abs(target - b.value) > math.abs(target - a.value)).headOption
   }
 
-  def nearest(a: Int, b: Int, target: Int): Int = {
-    if (math.abs(target - b) > math.abs(target - a))
-      return a
-    return b
+  def nearer(a: Int, b: Int, target: Int): Boolean = {
+    math.abs(target - b) > math.abs(target - a)
+  }
+  
+  //TODO: return unused, apply recursion
+  def possibles(entries:List[Int]) : Map[Int,String] = {
+    var result = entries map (a => a -> a.toString()) toMap;
+    for (e <- entries) {
+      result = result ++ (entries diff List(e)).map(b => b+e -> getString(b,"+",e)).toMap 
+      result = result ++ (entries diff List(e)).map(b => b-e -> getString(b,"-",e)).toMap
+      result = result ++ (entries diff List(e)).map(b => b*e -> getString(b,"*",e)).toMap
+      //TODO: think about division...
+//      result = (entries diff List(e)).map(b => b+e -> getString(b,"+",e)).toMap
+    }
+    println(result)
+    return result
+  }
+  
+  def getString(a:(String, String, String)) : String = {
+    "("+a._1+a._2+a._3+")"
   }
 
   def isItClose(s: Int, b: Int, others: List[Int], target: Int): Boolean = {
     val max = others.sortWith(_ > _).take(2).reduce(_ * _)
     val mult = s * b
-    return mult < target + max && mult > target - max
+    mult < target + max && mult > target - max
   }
 
   def selectNumbers(numOfBigs: Int): (List[Int], List[Int]) = {
-    return (select(numOfBigs, bigs), select(6 - numOfBigs, smalls))
+    (select(numOfBigs, bigs), select(6 - numOfBigs, smalls))
   }
 
   def select(n: Int, originals: List[Int]): List[Int] = {
