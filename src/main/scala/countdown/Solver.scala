@@ -2,6 +2,7 @@ package countdown
 
 import scala.util.Random
 import scala.collection.immutable.Queue
+import scala.collection.mutable
 
 object Solver {
 
@@ -49,18 +50,23 @@ object Solver {
   }
 
   //TODO: return unused, apply recursion, key on unused: Map[Seq?[Int], Map[Int, String]]
-  def possibles(entries: Seq[Int]): Map[Set[Int], Map[Int, String]] = {
-    var m = Map[Set[Int], Map[Int, String]]()
+  def possibles(entries: Seq[Int]): Map[Seq[Int], Map[Int, String]] = {
+    var m = Map[Seq[Int], Map[Int, String]]()
 
     for (e <- entries) {
       val leftovers = entries diff Seq(e)
+      leftovers.foreach { b =>
+        val key = leftovers diff Seq(b) sorted
+        
+      }
+      
       var result = entries map (a => a -> a.toString()) toMap;
-      result = result ++ leftovers.map(b => b + e -> getString(b, "+", e)).toMap
-      result = result ++ leftovers.map(b => b - e -> getString(b, "-", e)).toMap
-      result = result ++ leftovers.map(b => b * e -> getString(b, "*", e)).toMap
-      //      result = result ++ leftovers
-      //                            .filter(_%e==0)
-      //                            .map(b => b/e -> getString(b,"/",e)).toMap
+      m = m + (leftovers -> result)
+      
+      m = m ++ leftovers.map(b => (leftovers diff Seq(b)) -> Map(b + e -> getString(b, "+", e))).toMap 
+      m = m ++ leftovers.map(b => (leftovers diff Seq(b)) -> Map(b - e -> getString(b, "-", e))).toMap 
+      m = m ++ leftovers.map(b => (leftovers diff Seq(b)) -> Map(b * e -> getString(b, "*", e))).toMap 
+      m = m ++ possibles(leftovers)
     }
     return m
   }
